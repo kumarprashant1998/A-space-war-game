@@ -1,10 +1,12 @@
-//global variables
+//----------------------global variables-------------------------//
 
 //creating width,height and xPetcent,yPercent variable of screen
 const width = window.innerWidth;
 const height = window.innerHeight;
-const xPercent = window.innerWidth/100;
-const yPercent = window.innerHeight/100;
+const xPercent = window.innerWidth / 100;
+const yPercent = window.innerHeight / 100;
+let spaceShip;
+let castle;
 
 //used as baseurl
 let baseUrl = "./images/";
@@ -12,8 +14,13 @@ let baseUrl = "./images/";
 let gameSpriteArray = [];
 //laserSprite array
 let laserSpriteArray = [];
+//meteoriteSprite array
+let meteoriteSpriteArray = [];
 //explosion array
 let explosionSpriteArray = [];
+
+//-----------------------useful functions----------------------//
+
 //used to console anything
 let cL = (e) => {
   console.log(e);
@@ -27,7 +34,58 @@ function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-//PIXI MAIN APPLICATION
+//creating sprites
+function createSprite(
+  texture,
+  xPosition,
+  yPosition,
+  width,
+  height,
+  show = false,
+  arrayToStore = [],
+  xAnchor,
+  yAnchor
+) {
+  let sprite = PIXI.Sprite.from(texture);
+  sprite.position.x = xPosition;
+  sprite.position.y = yPosition;
+  width != null ? (sprite.width = width) : "";
+  height != null ? (sprite.height = height) : "";
+  xAnchor != null ? (sprite.anchor.x = xAnchor) : "";
+  yAnchor != null ? (sprite.anchor.y = yAnchor) : "";
+  sprite.visible = show;
+  app.stage.addChild(sprite);
+  if (arrayToStore !== null) {
+    arrayToStore.push(sprite);
+  } else {
+    return sprite;
+  }
+}
+
+function setup(resources) {
+  castle = createSprite(
+    resources.resources.castle.texture,
+    0 * xPercent,
+    70 * yPercent,
+    100 * xPercent,
+    30 * yPercent,
+    true,
+    null
+  );
+  spaceShip = createSprite(
+    resources.resources.spaceShip.texture,
+    50 * xPercent,
+    50 * yPercent,
+    20*xPercent,
+    30*yPercent,
+    true,
+    null,
+    0.5,
+    0.5
+  );
+}
+
+//-----------------------------PIXI MAIN APPLICATION----------------------------//
 const app = new PIXI.Application({
   width: window.innerWidth,
   height: window.innerHeight,
@@ -56,149 +114,121 @@ loader
   .add("explosion", "explosion.png")
   .add("spaceShip", "spaceShip.png")
   .add("meteorite", "meteorite.png")
-  .load((resources)=>{setup(resources)});
-
-function setup(resources) {
-  let container = new PIXI.Container();
-  createSprite(resources.resources.castle.texture,0*xPercent,70*yPercent,100*xPercent,30*yPercent,true,gameSpriteArray,container);
-  createSprite(resources.resources.spaceShip.texture,50*xPercent,50*yPercent,null,null,true,gameSpriteArray,container,0.5,0.5);
-  //createSprite(resources.resources.explosion.texture,50*xPercent,50*yPercent,15*xPercent,20*yPercent,null,[0.5],false,gameSpriteArry,container);
-  //createSprite(resources.resources.meteorite.texture,50*xPercent,50*yPercent,15*xPercent,20*yPercent,null,[0.5],false,gameSpriteArry,container);
-  app.stage.addChild(container)
- 
-}
-
-function createSprite(
-  texture,
-  xPosition,
-  yPosition,
-  width,
-  height,
-  show = false,
-  array,
-  container,
-  xAnchor,
-  yAnchor
-) {
-  let sprite = PIXI.Sprite.from(texture);
-  sprite.position.x = xPosition;
-  sprite.position.y = yPosition;
-  width!=null?sprite.width = width:"";
-  height!=null?sprite.height = height:"";
-  xAnchor!=null?
-    sprite.anchor.x = xAnchor:"";
-  yAnchor!=null?
-    sprite.anchor.y = yAnchor:"";
-  sprite.visible = show;
-  array.push(sprite);
-  container.addChild(sprite);
-}
-
-// adding ending text
-const style = new PIXI.TextStyle({
-  dropShadow: true,
-  dropShadowAngle: 0.5,
-  dropShadowColor: "#cfcfcf",
-  dropShadowDistance: 8,
-  fill: ["red", "black"],
-  fillGradientStops: [0.2, 1],
-  fontFamily: "Arial Black",
-  fontSize: 34,
-  fontVariant: "small-caps",
-  fontWeight: "bold",
-  letterSpacing: 1,
-  strokeThickness: 1,
-});
-
-const endText = new PIXI.Text("!!  Game Over  !!", style);
-endText.anchor.set(0.5, 0.5);
-endText.position.set(width / 2, height / 2);
-
-// //creating laser texture
-// //const laserTexture = PIXI.Texture.from( baseUrl +"laser.png");
-// laserTexture.anchor.set(0.5, 1);
-// laserTexture.scale.set(0.1, 0.05);
-// laser = new PIXI.Sprite.from(laserTexture);
-// app.stage.addChild(laser);
+  .load((resources) => {
+    setup(resources);
+  });
 
 // //creating explosion texture
-// //const explosionTexture = PIXI.Texture.from(baseUrl + "explosion.png");
+// const explosionTexture =createSprite(
+//     resources.resources.explosion.texture,
+//     50 * xPercent,
+//     50 * yPercent,
+//     null,
+//     null,
+//     true,
+//     null,
+//     explosionSpriteArray,
+//     0.5,
+//     0.5
+//   );
 // explosionTexture.anchor.set(0.5, 0.5);
 // explosionTexture.scale.set(0.3, 0.3);
 
+//----------------------------------------Event Listener--------------------------------//
 
-// // Event Listener to move spaceShip
- document.addEventListener("keydown", function (e) {
-  if (e.key === "ArrowLeft" && ((gameSpriteArray[1].position.x + (gameSpriteArray[1].width)) > 0)) {
-    gameSpriteArray[1].position.x -= 15;
+//Event Listener to move spaceShip
+document.addEventListener("keydown", function (e) {
+  if (
+    e.key === "ArrowLeft" &&
+    spaceShip.position.x - spaceShip.width / 10 > 0
+  ) {
+    spaceShip.position.x -= 15;
   }
-  if (e.key === "ArrowRight") {
-    gameSpriteArray[1].position.x += 15;
+  if (
+    e.key === "ArrowRight" &&
+    spaceShip.position.x + spaceShip.width / 9 < width
+  ) {
+    spaceShip.position.x += 15;
   }
-  if (e.key === "ArrowUp") {
-    gameSpriteArray[1].position.y -= 15;
+  if (e.key === "ArrowUp" && spaceShip.position.y - spaceShip.height / 2 > 0) {
+    spaceShip.position.y -= 15;
   }
-  if (e.key === "ArrowDown") {
-    gameSpriteArray[1].position.y += 15;
+  if (
+    e.key === "ArrowDown" &&
+    spaceShip.position.y + spaceShip.width / 4 < height
+  ) {
+    spaceShip.position.y += 15;
   }
 });
 
-// function to add laser
-function creatingLaser() {
-    createSprite(resources.resources.laser.texture,50*xPercent,50*yPercent,15*xPercent,20*yPercent,null,[0.5],true,gameSpriteArry,container);
-  laser.position.set(spaceShip.position.x, spaceShip.position.y);
+//Event Listener to fire spaceship
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") {
+    let laser = new Laser();
+    laserSpriteArray.push(laser);
+  }
+});
+//-------------------------------------lasers----------------------------------//
 
-  app.stage.addChild(laser);
+var loopForlaser = requestAnimationFrame(firingLaser);
+
+class Laser {
+  constructor() {
+    this.obj = createSprite(
+      loader.resources.laser.texture,
+      spaceShip.position.x,
+      spaceShip.position.y,
+      15 * xPercent,
+      20 * yPercent,
+      true,
+      null,
+      0.5,
+      1
+    );
+    this.markOfDelete = false;
+  }
+
+  animateLaser() {
+    if (this.obj.position.y > 0) this.obj.position.y -= 10;
+    else this.markOfDelete = true;
+  }
+
+}
+// firing  laser on y axis
+function firingLaser() {
+  [...laserSpriteArray].forEach((obj) => {
+    obj.animateLaser();
+    obj.markOfDelete?(obj.obj.destroy()):"";
+  });
+  laserSpriteArray = laserSpriteArray.filter(obj =>
+  !obj.markOfDelete)
+  app.render(app.stage);
+  requestAnimationFrame(firingLaser);
 }
 
-// // firing  laser on y axis
-// function firingLaser() {
-//   if (laser.position.y > 0) {
-//     laser.position.y -= 2;
-//     if (detectCollision(meteorite, laser)) {
-//       console.log("it detects");
-//       explosion.position.set(laser.position.x, 0);
-//       app.stage.addChild(explosion);
-//       app.stage.removeChild(laser);
-//       app.stage.removeChild(meteorite);
-//       app.stage.addChild(endText);
-//       laser.destroy();
-//       meteorite.destroy();
-//       cancelAnimationFrame(loopForlaser);
-//       return;
-//     }
-//   }
-
-//   app.render(app.stage);
-//   requestAnimationFrame(firingLaser);
-// }
-// var laser;
-// // function to add and fire laser
-// document.addEventListener("keydown", (e) => {
-//   if (e.code === "Space") {
-//     creatingLaser();
-//     var loopForlaser = requestAnimationFrame(firingLaser);
-//   }
-// });
+//---------------------------------meteorite section--------------------------------//
 
 // var meteorite; //  declaring meteorite
 // var random_x_position;
 // // creating random meteorite on y axis
 // function creating_meteorite() {
 //   random_x_position = getRandomArbitrary(0, width);
-//   // meteorite = PIXI.Sprite.from(baseUrl + "meteorite.png");
-//   meteorite.anchor.set(0.5);
-//   meteorite.width = meteorite.height = 100;
-//   meteorite.position.x = random_x_position;
-//   meteorite.position.y = 0;
+//   createSprite(
+//     loader.resources.meteorite.texture,
+//     random_x_position,
+//     -100,
+//     15 * xPercent,
+//     20 * yPercent,
+//     true,
+//     meteoriteSpriteArray,
+//     0.5,
+//     1
+//   );
 //   return meteorite;
 // }
 
 // // function to creating meteroite after 6 sec
 // function creating_meteorite_after_6() {
-//   meteorite = creating_meteorite();
-//   app.stage.addChild(meteorite);
-
 //   var loopForMeteorite = window.requestAnimationFrame(moving_meteorite);
 
 //   // moving meteorite on y axis
@@ -222,56 +252,23 @@ function creatingLaser() {
 
 // var timeout = setInterval(creating_meteorite_after_6, 6000);
 
-// // function to provide swing on x - axis to spaceShip
+//--------------------------------------------end text ------------------------------------------------//
+// adding ending text
+const style = new PIXI.TextStyle({
+  dropShadow: true,
+  dropShadowAngle: 0.5,
+  dropShadowColor: "#cfcfcf",
+  dropShadowDistance: 8,
+  fill: ["red", "black"],
+  fillGradientStops: [0.2, 1],
+  fontFamily: "Arial Black",
+  fontSize: 34,
+  fontVariant: "small-caps",
+  fontWeight: "bold",
+  letterSpacing: 1,
+  strokeThickness: 1,
+});
 
-// // let elapsed = 0.0;
-// // app.ticker.add((delta) => {
-// //     elapsed += delta;
-// //     spaceShip.x = app.screen.width / 2 + Math.sin(elapsed / 49.0) * 100.0;
-// // });
-
-// // function to provide an angle to follow mouse pointer
-
-// // app.ticker.add((delta) => {
-// //     const cursorPosition = app.renderer.plugins.interaction.mouse.global;
-// //     let angle =
-// //         Math.atan2(
-// //             cursorPosition.y - spaceShip.position.y,
-// //             cursorPosition.x - spaceShip.position.x
-// //         ) +
-// //         Math.PI / 2;
-// //     spaceShip.rotation = angle;
-// // });
-
-// // const rect1 = new Graphics();
-// // rect1.drawRect(100, 100, 50, 50)
-// //     .beginFill(0xffffff);
-// // app.stage.addChild(rect1);
-// // const rectangle = PIXI.Sprite.from(PIXI.Texture.WHITE);
-// // rectangle.width = 300;
-// // rectangle.height = 200;
-// // rectangle.tint = 0xffffff;
-// // app.stage.addChild(rectangle);
-// // const rectangle1 = PIXI.Sprite.from(PIXI.Texture.WHITE);
-// // rectangle1.width = 300;
-// // rectangle1.height = 200;
-// // rectangle1.position.x = width - rectangle1.width;
-// // rectangle1.tint = 0xffffff;
-// // app.stage.addChild(rectangle1);
-// // let ticker = PIXI.Ticker.shared;
-// // Set this to prevent starting this ticker when listeners are added.
-// // By default this is true only for the PIXI.Ticker.shared instance.
-// // ticker.autoStart = false;
-// // FYI, call this to ensure the ticker is stopped. It should be stopped
-// // if you have not attempted to render anything yet.
-
-// // Call this when you are ready for a running shared ticker.
-// // ticker.start();
-
-// // app.ticker.add((delta) => {
-// //     rectangle1.x -= 3;
-// //     rectangle.x += 3;
-// //     if (detectCollision(rectangle, rectangle1)) {
-// //         ticker.stop();
-// //     }
-// // });
+const endText = new PIXI.Text("!!  Game Over  !!", style);
+endText.anchor.set(0.5, 0.5);
+endText.position.set(width / 2, height / 2);
