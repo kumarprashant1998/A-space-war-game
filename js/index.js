@@ -7,6 +7,7 @@ const xPercent = window.innerWidth / 100;
 const yPercent = window.innerHeight / 100;
 let spaceShip;
 let castle;
+let endText;
 
 //used as baseurl
 let baseUrl = "./images/";
@@ -44,7 +45,8 @@ function createSprite(
   show = false,
   arrayToStore = [],
   xAnchor,
-  yAnchor
+  yAnchor,
+  counter
 ) {
   let sprite = PIXI.Sprite.from(texture);
   sprite.position.x = xPosition;
@@ -54,6 +56,7 @@ function createSprite(
   xAnchor != null ? (sprite.anchor.x = xAnchor) : "";
   yAnchor != null ? (sprite.anchor.y = yAnchor) : "";
   sprite.visible = show;
+  counter != null ? (sprite["counter"] = counter) : "";
   app.stage.addChild(sprite);
   if (arrayToStore !== null) {
     arrayToStore.push(sprite);
@@ -63,6 +66,31 @@ function createSprite(
 }
 
 function setup(resources) {
+  //-----------------------------------end text -----------------------------------//
+  // adding ending text
+  const style = new PIXI.TextStyle({
+    dropShadow: true,
+    dropShadowAngle: 0.5,
+    dropShadowColor: "#cfcfcf",
+    dropShadowDistance: 8,
+    fill: ["red", "black"],
+    fillGradientStops: [0.2, 1],
+    fontFamily: "Arial Black",
+    fontSize: 34,
+    fontVariant: "small-caps",
+    fontWeight: "bold",
+    letterSpacing: 1,
+    strokeThickness: 1,
+  });
+
+  endText = new PIXI.Text("!!  Game Over  !!", style);
+  endText.anchor.set(0.5, 0.5);
+  endText.position.set(width / 2, height / 2);
+  endText.visible = false;
+  app.stage.addChild(endText);
+
+  //-----------------------------------------------------------------------------//
+
   castle = createSprite(
     resources.resources.castle.texture,
     0 * xPercent,
@@ -76,8 +104,8 @@ function setup(resources) {
     resources.resources.spaceShip.texture,
     50 * xPercent,
     50 * yPercent,
-    20*xPercent,
-    30*yPercent,
+    20 * xPercent,
+    30 * yPercent,
     true,
     null,
     0.5,
@@ -106,7 +134,7 @@ app.renderer.view.style.display = "block";
 document.body.appendChild(app.view);
 
 // const loader = PIXI.Loader.shared;  //PixiJS exposes a premade instance for you to use.
-//or
+
 const loader = new PIXI.Loader(baseUrl); // you can also create your own if you want
 loader
   .add("castle", "castle.png")
@@ -118,25 +146,11 @@ loader
     setup(resources);
   });
 
-// //creating explosion texture
-// const explosionTexture =createSprite(
-//     resources.resources.explosion.texture,
-//     50 * xPercent,
-//     50 * yPercent,
-//     null,
-//     null,
-//     true,
-//     null,
-//     explosionSpriteArray,
-//     0.5,
-//     0.5
-//   );
-// explosionTexture.anchor.set(0.5, 0.5);
-// explosionTexture.scale.set(0.3, 0.3);
+//--------------------------------------------------------------------------------------//
 
 //----------------------------------------Event Listener--------------------------------//
 
-//Event Listener to move spaceShip
+//------------------Event Listener to move spaceShip-------------------//
 document.addEventListener("keydown", function (e) {
   if (
     e.key === "ArrowLeft" &&
@@ -161,16 +175,16 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
-//Event Listener to fire spaceship
+//-------------------------Event Listener to fire spaceship--------------------//
 document.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     let laser = new Laser();
     laserSpriteArray.push(laser);
   }
 });
-//-------------------------------------lasers----------------------------------//
+//-----------------------------------------------------------------------------//
 
-var loopForlaser = requestAnimationFrame(firingLaser);
+//-------------------------------------lasers----------------------------------//
 
 class Laser {
   constructor() {
@@ -192,45 +206,82 @@ class Laser {
     if (this.obj.position.y > 0) this.obj.position.y -= 10;
     else this.markOfDelete = true;
   }
-
-}
-// firing  laser on y axis
-function firingLaser() {
-  [...laserSpriteArray].forEach((obj) => {
-    obj.animateLaser();
-    obj.markOfDelete?(obj.obj.destroy()):"";
-  });
-  laserSpriteArray = laserSpriteArray.filter(obj =>
-  !obj.markOfDelete)
-  app.render(app.stage);
-  requestAnimationFrame(firingLaser);
 }
 
+//---------------------------------------------------------------------------------//
+//---------------------------------explosion section--------------------------------//
+class Explosion {
+  constructor() {
+    this.obj = createSprite(
+      loader.resources.explosion.texture,
+      spaceShip.position.x,
+      spaceShip.position.y,
+      15 * xPercent,
+      20 * yPercent,
+      true,
+      null,
+      0.5,
+      1
+    );
+    this.markOfDelete = false;
+  }
+
+  animateLaser() {
+    if (this.obj.position.y > 0) this.obj.position.y -= 10;
+    else this.markOfDelete = true;
+  }
+}
+
+//-----------------------------------------------------------------------------------//
 //---------------------------------meteorite section--------------------------------//
 
-// var meteorite; //  declaring meteorite
-// var random_x_position;
-// // creating random meteorite on y axis
-// function creating_meteorite() {
-//   random_x_position = getRandomArbitrary(0, width);
-//   createSprite(
-//     loader.resources.meteorite.texture,
-//     random_x_position,
-//     -100,
-//     15 * xPercent,
-//     20 * yPercent,
-//     true,
-//     meteoriteSpriteArray,
-//     0.5,
-//     1
-//   );
-//   return meteorite;
-// }
+class Meteorite {
+  constructor() {
+    this.obj = createSprite(
+      loader.resources.meteorite.texture,
+      getRandomArbitrary(
+        loader.resources.meteorite.texture.width / 10,
+        width - loader.resources.meteorite.texture.width / 10
+      ),
+      -100,
+      10 * xPercent,
+      10 * xPercent,
+      true,
+      null,
+      0.5,
+      0.5
+    );
+    this.markOfDelete = false;
+  }
+
+  animateMeteorite() {
+    if (this.obj.position.y < height) this.obj.position.y += 3;
+    else {
+      createSprite(
+        loader.resources.explosion.texture,
+        this.obj.position.x,
+        height,
+        15 * xPercent,
+        20 * yPercent,
+        true,
+        explosionSpriteArray,
+        0.5,
+        1,
+        0
+      );
+      endText.visible = true;
+      this.markOfDelete = true;
+    }
+  }
+}
+
+let timeout = setInterval(() => {
+  let meteorite = new Meteorite();
+  meteoriteSpriteArray.push(meteorite);
+}, 3000);
 
 // // function to creating meteroite after 6 sec
 // function creating_meteorite_after_6() {
-//   var loopForMeteorite = window.requestAnimationFrame(moving_meteorite);
-
 //   // moving meteorite on y axis
 //   function moving_meteorite() {
 //     if (meteorite.position.y < height) {
@@ -249,26 +300,43 @@ function firingLaser() {
 //     requestAnimationFrame(moving_meteorite);
 //   }
 // }
+//-----------------------------------------------------------------------------//
 
-// var timeout = setInterval(creating_meteorite_after_6, 6000);
+//------------------------------------animation loop---------------------------//
 
-//--------------------------------------------end text ------------------------------------------------//
-// adding ending text
-const style = new PIXI.TextStyle({
-  dropShadow: true,
-  dropShadowAngle: 0.5,
-  dropShadowColor: "#cfcfcf",
-  dropShadowDistance: 8,
-  fill: ["red", "black"],
-  fillGradientStops: [0.2, 1],
-  fontFamily: "Arial Black",
-  fontSize: 34,
-  fontVariant: "small-caps",
-  fontWeight: "bold",
-  letterSpacing: 1,
-  strokeThickness: 1,
-});
+var loopForAnimation = requestAnimationFrame(animationLoop);
 
-const endText = new PIXI.Text("!!  Game Over  !!", style);
-endText.anchor.set(0.5, 0.5);
-endText.position.set(width / 2, height / 2);
+function animationLoop() {
+  // firing  laser on y axis and deleting them
+  [...laserSpriteArray].forEach((obj) => {
+    obj.animateLaser();
+    obj.markOfDelete ? obj.obj.destroy() : "";
+  });
+  laserSpriteArray = laserSpriteArray.filter((obj) => !obj.markOfDelete);
+
+  // firing  metrorite on y axis and deleting them
+  [...meteoriteSpriteArray].forEach((obj) => {
+    obj.animateMeteorite();
+    obj.markOfDelete ? obj.obj.destroy() : "";
+  });
+  meteoriteSpriteArray = meteoriteSpriteArray.filter(
+    (obj) => !obj.markOfDelete
+  );
+  // deleting explosion
+  [...explosionSpriteArray].forEach((sprite) => {
+    if (sprite.counter < 100) {
+      sprite.counter++;
+    } else {
+      sprite.destroy();
+      explosionSpriteArray = explosionSpriteArray.filter(
+        (sprite) => sprite.counter < 100
+      );
+    }
+  });
+  //
+
+  app.render(app.stage);
+  requestAnimationFrame(animationLoop);
+}
+
+//-----------------------------------------------------------------------------//
