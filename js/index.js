@@ -8,6 +8,7 @@ const yPercent = window.innerHeight / 100;
 let spaceShip;
 let castle;
 let endText;
+let loopForAnimation;
 
 //used as baseurl
 let baseUrl = "./images/";
@@ -271,6 +272,8 @@ class Meteorite {
       );
       endText.visible = true;
       this.markOfDelete = true;
+      window.cancelAnimationFrame(loopForAnimation);
+      return
     }
   }
 }
@@ -280,31 +283,10 @@ let timeout = setInterval(() => {
   meteoriteSpriteArray.push(meteorite);
 }, 3000);
 
-// // function to creating meteroite after 6 sec
-// function creating_meteorite_after_6() {
-//   // moving meteorite on y axis
-//   function moving_meteorite() {
-//     if (meteorite.position.y < height) {
-//       meteorite.position.y += 2;
-//     } else if (meteorite.position.y == height) {
-//       explosion.position.set(meteorite.position.x, height);
-//       app.stage.addChild(explosion);
-//       app.stage.removeChild(meteorite);
-//       app.stage.addChild(endText);
-//       meteorite.destroy();
-//       clearInterval(timeout);
-//       window.cancelAnimationFrame(loopForMeteorite);
-//       return;
-//     }
-//     app.render(app.stage);
-//     requestAnimationFrame(moving_meteorite);
-//   }
-// }
 //-----------------------------------------------------------------------------//
 
 //------------------------------------animation loop---------------------------//
 
-var loopForAnimation = requestAnimationFrame(animationLoop);
 
 function animationLoop() {
   // firing  laser on y axis and deleting them
@@ -322,21 +304,49 @@ function animationLoop() {
   meteoriteSpriteArray = meteoriteSpriteArray.filter(
     (obj) => !obj.markOfDelete
   );
-  // deleting explosion
+
+  // creating explosion on screen and deleting them
   [...explosionSpriteArray].forEach((sprite) => {
-    if (sprite.counter < 100) {
+    if (sprite.counter < 25) {
       sprite.counter++;
     } else {
       sprite.destroy();
       explosionSpriteArray = explosionSpriteArray.filter(
-        (sprite) => sprite.counter < 100
+        (sprite) => sprite.counter < 25
       );
     }
   });
-  //
+
+  // detecting if laser and meteorite have colide
+  [...laserSpriteArray].forEach((obj1) => {
+    [...meteoriteSpriteArray].forEach((obj2) => {
+      if (
+        obj1.obj.position.x < obj2.obj.position.x + obj2.obj.width &&
+        obj1.obj.x + obj1.obj.width > obj2.obj.x &&
+        obj1.obj.y < obj2.obj.y + obj2.obj.height &&
+        obj1.obj.height + obj1.obj.y > obj2.obj.y
+      ) {
+        obj1.markOfDelete = true;
+        obj2.markOfDelete = true;
+        createSprite(
+          loader.resources.explosion.texture,
+          obj2.obj.position.x,
+          obj2.obj.position.y,
+          15 * xPercent,
+          20 * yPercent,
+          true,
+          explosionSpriteArray,
+          0.5,
+          1,
+          0
+        );
+      }
+    });
+  });
 
   app.render(app.stage);
-  requestAnimationFrame(animationLoop);
+  loopForAnimation = window.requestAnimationFrame(animationLoop);
 }
 
+animationLoop()
 //-----------------------------------------------------------------------------//
